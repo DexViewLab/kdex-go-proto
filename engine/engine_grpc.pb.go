@@ -25,7 +25,7 @@ type EngineClient interface {
 	// 行情(trade)
 	SubscribeTrade(ctx context.Context, in *SubscribeTradeRequest, opts ...grpc.CallOption) (Engine_SubscribeTradeClient, error)
 	// 上新
-	SubscribeNewToken(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewTokenClient, error)
+	SubscribeNewPair(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewPairClient, error)
 	// 获取kline
 	GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error)
 	// 获取Trade
@@ -144,12 +144,12 @@ func (x *engineSubscribeTradeClient) Recv() (*SubscribeTradeResponse, error) {
 	return m, nil
 }
 
-func (c *engineClient) SubscribeNewToken(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewTokenClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Engine_ServiceDesc.Streams[3], "/engine.api.Engine/SubscribeNewToken", opts...)
+func (c *engineClient) SubscribeNewPair(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewPairClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Engine_ServiceDesc.Streams[3], "/engine.api.Engine/SubscribeNewPair", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &engineSubscribeNewTokenClient{stream}
+	x := &engineSubscribeNewPairClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -159,16 +159,16 @@ func (c *engineClient) SubscribeNewToken(ctx context.Context, in *SubscribeNewPa
 	return x, nil
 }
 
-type Engine_SubscribeNewTokenClient interface {
+type Engine_SubscribeNewPairClient interface {
 	Recv() (*SubscribeNewPairResponse, error)
 	grpc.ClientStream
 }
 
-type engineSubscribeNewTokenClient struct {
+type engineSubscribeNewPairClient struct {
 	grpc.ClientStream
 }
 
-func (x *engineSubscribeNewTokenClient) Recv() (*SubscribeNewPairResponse, error) {
+func (x *engineSubscribeNewPairClient) Recv() (*SubscribeNewPairResponse, error) {
 	m := new(SubscribeNewPairResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -241,7 +241,7 @@ type EngineServer interface {
 	// 行情(trade)
 	SubscribeTrade(*SubscribeTradeRequest, Engine_SubscribeTradeServer) error
 	// 上新
-	SubscribeNewToken(*SubscribeNewPairRequest, Engine_SubscribeNewTokenServer) error
+	SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error
 	// 获取kline
 	GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error)
 	// 获取Trade
@@ -270,8 +270,8 @@ func (UnimplementedEngineServer) SubscribeKline(*SubscribeKlineRequest, Engine_S
 func (UnimplementedEngineServer) SubscribeTrade(*SubscribeTradeRequest, Engine_SubscribeTradeServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeTrade not implemented")
 }
-func (UnimplementedEngineServer) SubscribeNewToken(*SubscribeNewPairRequest, Engine_SubscribeNewTokenServer) error {
-	return status.Errorf(codes.Unimplemented, "method SubscribeNewToken not implemented")
+func (UnimplementedEngineServer) SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeNewPair not implemented")
 }
 func (UnimplementedEngineServer) GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKlineHistory not implemented")
@@ -367,24 +367,24 @@ func (x *engineSubscribeTradeServer) Send(m *SubscribeTradeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Engine_SubscribeNewToken_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Engine_SubscribeNewPair_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(SubscribeNewPairRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(EngineServer).SubscribeNewToken(m, &engineSubscribeNewTokenServer{stream})
+	return srv.(EngineServer).SubscribeNewPair(m, &engineSubscribeNewPairServer{stream})
 }
 
-type Engine_SubscribeNewTokenServer interface {
+type Engine_SubscribeNewPairServer interface {
 	Send(*SubscribeNewPairResponse) error
 	grpc.ServerStream
 }
 
-type engineSubscribeNewTokenServer struct {
+type engineSubscribeNewPairServer struct {
 	grpc.ServerStream
 }
 
-func (x *engineSubscribeNewTokenServer) Send(m *SubscribeNewPairResponse) error {
+func (x *engineSubscribeNewPairServer) Send(m *SubscribeNewPairResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -545,8 +545,8 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "SubscribeNewToken",
-			Handler:       _Engine_SubscribeNewToken_Handler,
+			StreamName:    "SubscribeNewPair",
+			Handler:       _Engine_SubscribeNewPair_Handler,
 			ServerStreams: true,
 		},
 	},
