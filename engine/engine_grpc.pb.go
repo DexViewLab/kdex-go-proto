@@ -26,10 +26,10 @@ type EngineClient interface {
 	SubscribeTrade(ctx context.Context, in *SubscribeTradeRequest, opts ...grpc.CallOption) (Engine_SubscribeTradeClient, error)
 	// 上新
 	SubscribeNewPair(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewPairClient, error)
+	// 搜索
+	SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (Engine_SearchTokenClient, error)
 	// 获取kline
 	GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error)
-	// 获取Trade
-	GetTrade(ctx context.Context, in *GetTradeRequest, opts ...grpc.CallOption) (*GetTradeResponse, error)
 	// 获取基础信息
 	GetBasicInfo(ctx context.Context, in *GetBasicInfoRequest, opts ...grpc.CallOption) (*GetBasicInfoResponse, error)
 	// for block-parser
@@ -176,18 +176,41 @@ func (x *engineSubscribeNewPairClient) Recv() (*SubscribeNewPairResponse, error)
 	return m, nil
 }
 
-func (c *engineClient) GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error) {
-	out := new(GetKlineHistoryResponse)
-	err := c.cc.Invoke(ctx, "/engine.api.Engine/GetKlineHistory", in, out, opts...)
+func (c *engineClient) SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (Engine_SearchTokenClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Engine_ServiceDesc.Streams[4], "/engine.api.Engine/SearchToken", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &engineSearchTokenClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *engineClient) GetTrade(ctx context.Context, in *GetTradeRequest, opts ...grpc.CallOption) (*GetTradeResponse, error) {
-	out := new(GetTradeResponse)
-	err := c.cc.Invoke(ctx, "/engine.api.Engine/GetTrade", in, out, opts...)
+type Engine_SearchTokenClient interface {
+	Recv() (*SearchTokenResponse, error)
+	grpc.ClientStream
+}
+
+type engineSearchTokenClient struct {
+	grpc.ClientStream
+}
+
+func (x *engineSearchTokenClient) Recv() (*SearchTokenResponse, error) {
+	m := new(SearchTokenResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *engineClient) GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error) {
+	out := new(GetKlineHistoryResponse)
+	err := c.cc.Invoke(ctx, "/engine.api.Engine/GetKlineHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -242,10 +265,10 @@ type EngineServer interface {
 	SubscribeTrade(*SubscribeTradeRequest, Engine_SubscribeTradeServer) error
 	// 上新
 	SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error
+	// 搜索
+	SearchToken(*SearchTokenRequest, Engine_SearchTokenServer) error
 	// 获取kline
 	GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error)
-	// 获取Trade
-	GetTrade(context.Context, *GetTradeRequest) (*GetTradeResponse, error)
 	// 获取基础信息
 	GetBasicInfo(context.Context, *GetBasicInfoRequest) (*GetBasicInfoResponse, error)
 	// for block-parser
@@ -273,11 +296,11 @@ func (UnimplementedEngineServer) SubscribeTrade(*SubscribeTradeRequest, Engine_S
 func (UnimplementedEngineServer) SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeNewPair not implemented")
 }
+func (UnimplementedEngineServer) SearchToken(*SearchTokenRequest, Engine_SearchTokenServer) error {
+	return status.Errorf(codes.Unimplemented, "method SearchToken not implemented")
+}
 func (UnimplementedEngineServer) GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKlineHistory not implemented")
-}
-func (UnimplementedEngineServer) GetTrade(context.Context, *GetTradeRequest) (*GetTradeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTrade not implemented")
 }
 func (UnimplementedEngineServer) GetBasicInfo(context.Context, *GetBasicInfoRequest) (*GetBasicInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBasicInfo not implemented")
@@ -388,6 +411,27 @@ func (x *engineSubscribeNewPairServer) Send(m *SubscribeNewPairResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Engine_SearchToken_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchTokenRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EngineServer).SearchToken(m, &engineSearchTokenServer{stream})
+}
+
+type Engine_SearchTokenServer interface {
+	Send(*SearchTokenResponse) error
+	grpc.ServerStream
+}
+
+type engineSearchTokenServer struct {
+	grpc.ServerStream
+}
+
+func (x *engineSearchTokenServer) Send(m *SearchTokenResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _Engine_GetKlineHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetKlineHistoryRequest)
 	if err := dec(in); err != nil {
@@ -402,24 +446,6 @@ func _Engine_GetKlineHistory_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EngineServer).GetKlineHistory(ctx, req.(*GetKlineHistoryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Engine_GetTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EngineServer).GetTrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/engine.api.Engine/GetTrade",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EngineServer).GetTrade(ctx, req.(*GetTradeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -508,10 +534,6 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Engine_GetKlineHistory_Handler,
 		},
 		{
-			MethodName: "GetTrade",
-			Handler:    _Engine_GetTrade_Handler,
-		},
-		{
 			MethodName: "GetBasicInfo",
 			Handler:    _Engine_GetBasicInfo_Handler,
 		},
@@ -547,6 +569,11 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SubscribeNewPair",
 			Handler:       _Engine_SubscribeNewPair_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SearchToken",
+			Handler:       _Engine_SearchToken_Handler,
 			ServerStreams: true,
 		},
 	},
