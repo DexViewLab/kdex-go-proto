@@ -27,7 +27,7 @@ type EngineClient interface {
 	// 上新
 	SubscribeNewPair(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewPairClient, error)
 	// 搜索
-	SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (Engine_SearchTokenClient, error)
+	SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (*SearchTokenResponse, error)
 	// 获取kline
 	GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error)
 	// 获取基础信息
@@ -176,36 +176,13 @@ func (x *engineSubscribeNewPairClient) Recv() (*SubscribeNewPairResponse, error)
 	return m, nil
 }
 
-func (c *engineClient) SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (Engine_SearchTokenClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Engine_ServiceDesc.Streams[4], "/engine.api.Engine/SearchToken", opts...)
+func (c *engineClient) SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (*SearchTokenResponse, error) {
+	out := new(SearchTokenResponse)
+	err := c.cc.Invoke(ctx, "/engine.api.Engine/SearchToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &engineSearchTokenClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type Engine_SearchTokenClient interface {
-	Recv() (*SearchTokenResponse, error)
-	grpc.ClientStream
-}
-
-type engineSearchTokenClient struct {
-	grpc.ClientStream
-}
-
-func (x *engineSearchTokenClient) Recv() (*SearchTokenResponse, error) {
-	m := new(SearchTokenResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 func (c *engineClient) GetKlineHistory(ctx context.Context, in *GetKlineHistoryRequest, opts ...grpc.CallOption) (*GetKlineHistoryResponse, error) {
@@ -266,7 +243,7 @@ type EngineServer interface {
 	// 上新
 	SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error
 	// 搜索
-	SearchToken(*SearchTokenRequest, Engine_SearchTokenServer) error
+	SearchToken(context.Context, *SearchTokenRequest) (*SearchTokenResponse, error)
 	// 获取kline
 	GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error)
 	// 获取基础信息
@@ -296,8 +273,8 @@ func (UnimplementedEngineServer) SubscribeTrade(*SubscribeTradeRequest, Engine_S
 func (UnimplementedEngineServer) SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeNewPair not implemented")
 }
-func (UnimplementedEngineServer) SearchToken(*SearchTokenRequest, Engine_SearchTokenServer) error {
-	return status.Errorf(codes.Unimplemented, "method SearchToken not implemented")
+func (UnimplementedEngineServer) SearchToken(context.Context, *SearchTokenRequest) (*SearchTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchToken not implemented")
 }
 func (UnimplementedEngineServer) GetKlineHistory(context.Context, *GetKlineHistoryRequest) (*GetKlineHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKlineHistory not implemented")
@@ -411,25 +388,22 @@ func (x *engineSubscribeNewPairServer) Send(m *SubscribeNewPairResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Engine_SearchToken_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(SearchTokenRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _Engine_SearchToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(EngineServer).SearchToken(m, &engineSearchTokenServer{stream})
-}
-
-type Engine_SearchTokenServer interface {
-	Send(*SearchTokenResponse) error
-	grpc.ServerStream
-}
-
-type engineSearchTokenServer struct {
-	grpc.ServerStream
-}
-
-func (x *engineSearchTokenServer) Send(m *SearchTokenResponse) error {
-	return x.ServerStream.SendMsg(m)
+	if interceptor == nil {
+		return srv.(EngineServer).SearchToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/engine.api.Engine/SearchToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServer).SearchToken(ctx, req.(*SearchTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Engine_GetKlineHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -530,6 +504,10 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*EngineServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "SearchToken",
+			Handler:    _Engine_SearchToken_Handler,
+		},
+		{
 			MethodName: "GetKlineHistory",
 			Handler:    _Engine_GetKlineHistory_Handler,
 		},
@@ -569,11 +547,6 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SubscribeNewPair",
 			Handler:       _Engine_SubscribeNewPair_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "SearchToken",
-			Handler:       _Engine_SearchToken_Handler,
 			ServerStreams: true,
 		},
 	},
