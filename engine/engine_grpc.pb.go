@@ -38,6 +38,8 @@ type EngineClient interface {
 	OnNewToken(ctx context.Context, in *OnNewTokenRequest, opts ...grpc.CallOption) (*OnNewTokenResponse, error)
 	// for block-parser
 	OnPairSync(ctx context.Context, in *OnPairSyncRequest, opts ...grpc.CallOption) (*OnPairSyncResponse, error)
+	// for block-parser
+	OnParseRecentlyBlock(ctx context.Context, in *OnParseRecentlyBlockRequest, opts ...grpc.CallOption) (*OnParseRecentlyBlockResponse, error)
 }
 
 type engineClient struct {
@@ -230,6 +232,15 @@ func (c *engineClient) OnPairSync(ctx context.Context, in *OnPairSyncRequest, op
 	return out, nil
 }
 
+func (c *engineClient) OnParseRecentlyBlock(ctx context.Context, in *OnParseRecentlyBlockRequest, opts ...grpc.CallOption) (*OnParseRecentlyBlockResponse, error) {
+	out := new(OnParseRecentlyBlockResponse)
+	err := c.cc.Invoke(ctx, "/engine.api.Engine/OnParseRecentlyBlock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EngineServer is the server API for Engine service.
 // All implementations must embed UnimplementedEngineServer
 // for forward compatibility
@@ -254,6 +265,8 @@ type EngineServer interface {
 	OnNewToken(context.Context, *OnNewTokenRequest) (*OnNewTokenResponse, error)
 	// for block-parser
 	OnPairSync(context.Context, *OnPairSyncRequest) (*OnPairSyncResponse, error)
+	// for block-parser
+	OnParseRecentlyBlock(context.Context, *OnParseRecentlyBlockRequest) (*OnParseRecentlyBlockResponse, error)
 	mustEmbedUnimplementedEngineServer()
 }
 
@@ -290,6 +303,9 @@ func (UnimplementedEngineServer) OnNewToken(context.Context, *OnNewTokenRequest)
 }
 func (UnimplementedEngineServer) OnPairSync(context.Context, *OnPairSyncRequest) (*OnPairSyncResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OnPairSync not implemented")
+}
+func (UnimplementedEngineServer) OnParseRecentlyBlock(context.Context, *OnParseRecentlyBlockRequest) (*OnParseRecentlyBlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OnParseRecentlyBlock not implemented")
 }
 func (UnimplementedEngineServer) mustEmbedUnimplementedEngineServer() {}
 
@@ -496,6 +512,24 @@ func _Engine_OnPairSync_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Engine_OnParseRecentlyBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OnParseRecentlyBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServer).OnParseRecentlyBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/engine.api.Engine/OnParseRecentlyBlock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServer).OnParseRecentlyBlock(ctx, req.(*OnParseRecentlyBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Engine_ServiceDesc is the grpc.ServiceDesc for Engine service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -526,6 +560,10 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "OnPairSync",
 			Handler:    _Engine_OnPairSync_Handler,
+		},
+		{
+			MethodName: "OnParseRecentlyBlock",
+			Handler:    _Engine_OnParseRecentlyBlock_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
