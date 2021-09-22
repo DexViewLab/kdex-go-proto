@@ -20,8 +20,12 @@ const _ = grpc.SupportPackageIsVersion7
 type BusinessClient interface {
 	// Banner
 	GetBanner(ctx context.Context, in *GetBannerRequest, opts ...grpc.CallOption) (*GetBannerResponse, error)
+	DeleteBanner(ctx context.Context, in *DeleteBannerRequest, opts ...grpc.CallOption) (*DeleteBannerResponse, error)
+	AddBanner(ctx context.Context, in *AddBannerRequest, opts ...grpc.CallOption) (*AddBannerResponse, error)
 	// Icon
 	GetIcon(ctx context.Context, in *GetIconRequest, opts ...grpc.CallOption) (*GetIconResponse, error)
+	DeleteIcon(ctx context.Context, in *DeleteIconRequest, opts ...grpc.CallOption) (*DeleteIconResponse, error)
+	AddIcon(ctx context.Context, in *AddIconRequest, opts ...grpc.CallOption) (*AddIconResponse, error)
 }
 
 type businessClient struct {
@@ -41,9 +45,45 @@ func (c *businessClient) GetBanner(ctx context.Context, in *GetBannerRequest, op
 	return out, nil
 }
 
+func (c *businessClient) DeleteBanner(ctx context.Context, in *DeleteBannerRequest, opts ...grpc.CallOption) (*DeleteBannerResponse, error) {
+	out := new(DeleteBannerResponse)
+	err := c.cc.Invoke(ctx, "/business.api.Business/DeleteBanner", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *businessClient) AddBanner(ctx context.Context, in *AddBannerRequest, opts ...grpc.CallOption) (*AddBannerResponse, error) {
+	out := new(AddBannerResponse)
+	err := c.cc.Invoke(ctx, "/business.api.Business/AddBanner", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *businessClient) GetIcon(ctx context.Context, in *GetIconRequest, opts ...grpc.CallOption) (*GetIconResponse, error) {
 	out := new(GetIconResponse)
 	err := c.cc.Invoke(ctx, "/business.api.Business/GetIcon", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *businessClient) DeleteIcon(ctx context.Context, in *DeleteIconRequest, opts ...grpc.CallOption) (*DeleteIconResponse, error) {
+	out := new(DeleteIconResponse)
+	err := c.cc.Invoke(ctx, "/business.api.Business/DeleteIcon", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *businessClient) AddIcon(ctx context.Context, in *AddIconRequest, opts ...grpc.CallOption) (*AddIconResponse, error) {
+	out := new(AddIconResponse)
+	err := c.cc.Invoke(ctx, "/business.api.Business/AddIcon", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +96,12 @@ func (c *businessClient) GetIcon(ctx context.Context, in *GetIconRequest, opts .
 type BusinessServer interface {
 	// Banner
 	GetBanner(context.Context, *GetBannerRequest) (*GetBannerResponse, error)
+	DeleteBanner(context.Context, *DeleteBannerRequest) (*DeleteBannerResponse, error)
+	AddBanner(context.Context, *AddBannerRequest) (*AddBannerResponse, error)
 	// Icon
 	GetIcon(context.Context, *GetIconRequest) (*GetIconResponse, error)
+	DeleteIcon(context.Context, *DeleteIconRequest) (*DeleteIconResponse, error)
+	AddIcon(context.Context, *AddIconRequest) (*AddIconResponse, error)
 	mustEmbedUnimplementedBusinessServer()
 }
 
@@ -68,8 +112,20 @@ type UnimplementedBusinessServer struct {
 func (UnimplementedBusinessServer) GetBanner(context.Context, *GetBannerRequest) (*GetBannerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBanner not implemented")
 }
+func (UnimplementedBusinessServer) DeleteBanner(context.Context, *DeleteBannerRequest) (*DeleteBannerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBanner not implemented")
+}
+func (UnimplementedBusinessServer) AddBanner(context.Context, *AddBannerRequest) (*AddBannerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBanner not implemented")
+}
 func (UnimplementedBusinessServer) GetIcon(context.Context, *GetIconRequest) (*GetIconResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIcon not implemented")
+}
+func (UnimplementedBusinessServer) DeleteIcon(context.Context, *DeleteIconRequest) (*DeleteIconResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIcon not implemented")
+}
+func (UnimplementedBusinessServer) AddIcon(context.Context, *AddIconRequest) (*AddIconResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddIcon not implemented")
 }
 func (UnimplementedBusinessServer) mustEmbedUnimplementedBusinessServer() {}
 
@@ -102,6 +158,42 @@ func _Business_GetBanner_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Business_DeleteBanner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBannerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BusinessServer).DeleteBanner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/business.api.Business/DeleteBanner",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BusinessServer).DeleteBanner(ctx, req.(*DeleteBannerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Business_AddBanner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBannerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BusinessServer).AddBanner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/business.api.Business/AddBanner",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BusinessServer).AddBanner(ctx, req.(*AddBannerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Business_GetIcon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetIconRequest)
 	if err := dec(in); err != nil {
@@ -120,6 +212,42 @@ func _Business_GetIcon_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Business_DeleteIcon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIconRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BusinessServer).DeleteIcon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/business.api.Business/DeleteIcon",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BusinessServer).DeleteIcon(ctx, req.(*DeleteIconRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Business_AddIcon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddIconRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BusinessServer).AddIcon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/business.api.Business/AddIcon",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BusinessServer).AddIcon(ctx, req.(*AddIconRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Business_ServiceDesc is the grpc.ServiceDesc for Business service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -132,8 +260,24 @@ var Business_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Business_GetBanner_Handler,
 		},
 		{
+			MethodName: "DeleteBanner",
+			Handler:    _Business_DeleteBanner_Handler,
+		},
+		{
+			MethodName: "AddBanner",
+			Handler:    _Business_AddBanner_Handler,
+		},
+		{
 			MethodName: "GetIcon",
 			Handler:    _Business_GetIcon_Handler,
+		},
+		{
+			MethodName: "DeleteIcon",
+			Handler:    _Business_DeleteIcon_Handler,
+		},
+		{
+			MethodName: "AddIcon",
+			Handler:    _Business_AddIcon_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
