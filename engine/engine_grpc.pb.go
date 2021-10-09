@@ -24,8 +24,10 @@ type EngineClient interface {
 	SubscribeKline(ctx context.Context, in *SubscribeKlineRequest, opts ...grpc.CallOption) (Engine_SubscribeKlineClient, error)
 	// 行情(trade)
 	SubscribeTrade(ctx context.Context, in *SubscribeTradeRequest, opts ...grpc.CallOption) (Engine_SubscribeTradeClient, error)
-	// 上新
+	// 上新， 订阅
 	SubscribeNewPair(ctx context.Context, in *SubscribeNewPairRequest, opts ...grpc.CallOption) (Engine_SubscribeNewPairClient, error)
+	// 上新，查询
+	GetNewPair(ctx context.Context, in *GetNewPairRequest, opts ...grpc.CallOption) (*GetNewPairResponse, error)
 	// 搜索
 	SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (*SearchTokenResponse, error)
 	// 获取kline
@@ -38,8 +40,6 @@ type EngineClient interface {
 	OnNewToken(ctx context.Context, in *OnNewTokenRequest, opts ...grpc.CallOption) (*OnNewTokenResponse, error)
 	// for block-parser
 	OnPairSync(ctx context.Context, in *OnPairSyncRequest, opts ...grpc.CallOption) (*OnPairSyncResponse, error)
-	// for block-parser
-	OnParseRecentlyBlock(ctx context.Context, in *OnParseRecentlyBlockRequest, opts ...grpc.CallOption) (*OnParseRecentlyBlockResponse, error)
 	// for block-parser
 	OnParseBlockTime(ctx context.Context, in *OnParseBlockTimeRequest, opts ...grpc.CallOption) (*OnParseBlockTimeResponse, error)
 }
@@ -180,6 +180,15 @@ func (x *engineSubscribeNewPairClient) Recv() (*SubscribeNewPairResponse, error)
 	return m, nil
 }
 
+func (c *engineClient) GetNewPair(ctx context.Context, in *GetNewPairRequest, opts ...grpc.CallOption) (*GetNewPairResponse, error) {
+	out := new(GetNewPairResponse)
+	err := c.cc.Invoke(ctx, "/engine.api.Engine/GetNewPair", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *engineClient) SearchToken(ctx context.Context, in *SearchTokenRequest, opts ...grpc.CallOption) (*SearchTokenResponse, error) {
 	out := new(SearchTokenResponse)
 	err := c.cc.Invoke(ctx, "/engine.api.Engine/SearchToken", in, out, opts...)
@@ -234,15 +243,6 @@ func (c *engineClient) OnPairSync(ctx context.Context, in *OnPairSyncRequest, op
 	return out, nil
 }
 
-func (c *engineClient) OnParseRecentlyBlock(ctx context.Context, in *OnParseRecentlyBlockRequest, opts ...grpc.CallOption) (*OnParseRecentlyBlockResponse, error) {
-	out := new(OnParseRecentlyBlockResponse)
-	err := c.cc.Invoke(ctx, "/engine.api.Engine/OnParseRecentlyBlock", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *engineClient) OnParseBlockTime(ctx context.Context, in *OnParseBlockTimeRequest, opts ...grpc.CallOption) (*OnParseBlockTimeResponse, error) {
 	out := new(OnParseBlockTimeResponse)
 	err := c.cc.Invoke(ctx, "/engine.api.Engine/OnParseBlockTime", in, out, opts...)
@@ -262,8 +262,10 @@ type EngineServer interface {
 	SubscribeKline(*SubscribeKlineRequest, Engine_SubscribeKlineServer) error
 	// 行情(trade)
 	SubscribeTrade(*SubscribeTradeRequest, Engine_SubscribeTradeServer) error
-	// 上新
+	// 上新， 订阅
 	SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error
+	// 上新，查询
+	GetNewPair(context.Context, *GetNewPairRequest) (*GetNewPairResponse, error)
 	// 搜索
 	SearchToken(context.Context, *SearchTokenRequest) (*SearchTokenResponse, error)
 	// 获取kline
@@ -276,8 +278,6 @@ type EngineServer interface {
 	OnNewToken(context.Context, *OnNewTokenRequest) (*OnNewTokenResponse, error)
 	// for block-parser
 	OnPairSync(context.Context, *OnPairSyncRequest) (*OnPairSyncResponse, error)
-	// for block-parser
-	OnParseRecentlyBlock(context.Context, *OnParseRecentlyBlockRequest) (*OnParseRecentlyBlockResponse, error)
 	// for block-parser
 	OnParseBlockTime(context.Context, *OnParseBlockTimeRequest) (*OnParseBlockTimeResponse, error)
 	mustEmbedUnimplementedEngineServer()
@@ -299,6 +299,9 @@ func (UnimplementedEngineServer) SubscribeTrade(*SubscribeTradeRequest, Engine_S
 func (UnimplementedEngineServer) SubscribeNewPair(*SubscribeNewPairRequest, Engine_SubscribeNewPairServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeNewPair not implemented")
 }
+func (UnimplementedEngineServer) GetNewPair(context.Context, *GetNewPairRequest) (*GetNewPairResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNewPair not implemented")
+}
 func (UnimplementedEngineServer) SearchToken(context.Context, *SearchTokenRequest) (*SearchTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchToken not implemented")
 }
@@ -316,9 +319,6 @@ func (UnimplementedEngineServer) OnNewToken(context.Context, *OnNewTokenRequest)
 }
 func (UnimplementedEngineServer) OnPairSync(context.Context, *OnPairSyncRequest) (*OnPairSyncResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OnPairSync not implemented")
-}
-func (UnimplementedEngineServer) OnParseRecentlyBlock(context.Context, *OnParseRecentlyBlockRequest) (*OnParseRecentlyBlockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OnParseRecentlyBlock not implemented")
 }
 func (UnimplementedEngineServer) OnParseBlockTime(context.Context, *OnParseBlockTimeRequest) (*OnParseBlockTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OnParseBlockTime not implemented")
@@ -418,6 +418,24 @@ type engineSubscribeNewPairServer struct {
 
 func (x *engineSubscribeNewPairServer) Send(m *SubscribeNewPairResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _Engine_GetNewPair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNewPairRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServer).GetNewPair(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/engine.api.Engine/GetNewPair",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServer).GetNewPair(ctx, req.(*GetNewPairRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Engine_SearchToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -528,24 +546,6 @@ func _Engine_OnPairSync_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Engine_OnParseRecentlyBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OnParseRecentlyBlockRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EngineServer).OnParseRecentlyBlock(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/engine.api.Engine/OnParseRecentlyBlock",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EngineServer).OnParseRecentlyBlock(ctx, req.(*OnParseRecentlyBlockRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Engine_OnParseBlockTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(OnParseBlockTimeRequest)
 	if err := dec(in); err != nil {
@@ -572,6 +572,10 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*EngineServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetNewPair",
+			Handler:    _Engine_GetNewPair_Handler,
+		},
+		{
 			MethodName: "SearchToken",
 			Handler:    _Engine_SearchToken_Handler,
 		},
@@ -594,10 +598,6 @@ var Engine_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "OnPairSync",
 			Handler:    _Engine_OnPairSync_Handler,
-		},
-		{
-			MethodName: "OnParseRecentlyBlock",
-			Handler:    _Engine_OnParseRecentlyBlock_Handler,
 		},
 		{
 			MethodName: "OnParseBlockTime",
