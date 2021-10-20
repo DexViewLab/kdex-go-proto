@@ -22,6 +22,8 @@ type BusinessClient interface {
 	GetBanners(ctx context.Context, in *GetBannersRequest, opts ...grpc.CallOption) (*GetBannersResponse, error)
 	// TokenIcon
 	GetTokenIcons(ctx context.Context, in *GetTokenIconsRequest, opts ...grpc.CallOption) (*GetTokenIconsResponse, error)
+	// AddToken
+	AddToken(ctx context.Context, in *AddTokenRequest, opts ...grpc.CallOption) (*AddTokenResponse, error)
 }
 
 type businessClient struct {
@@ -50,6 +52,15 @@ func (c *businessClient) GetTokenIcons(ctx context.Context, in *GetTokenIconsReq
 	return out, nil
 }
 
+func (c *businessClient) AddToken(ctx context.Context, in *AddTokenRequest, opts ...grpc.CallOption) (*AddTokenResponse, error) {
+	out := new(AddTokenResponse)
+	err := c.cc.Invoke(ctx, "/business.api.Business/AddToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BusinessServer is the server API for Business service.
 // All implementations must embed UnimplementedBusinessServer
 // for forward compatibility
@@ -58,6 +69,8 @@ type BusinessServer interface {
 	GetBanners(context.Context, *GetBannersRequest) (*GetBannersResponse, error)
 	// TokenIcon
 	GetTokenIcons(context.Context, *GetTokenIconsRequest) (*GetTokenIconsResponse, error)
+	// AddToken
+	AddToken(context.Context, *AddTokenRequest) (*AddTokenResponse, error)
 	mustEmbedUnimplementedBusinessServer()
 }
 
@@ -70,6 +83,9 @@ func (UnimplementedBusinessServer) GetBanners(context.Context, *GetBannersReques
 }
 func (UnimplementedBusinessServer) GetTokenIcons(context.Context, *GetTokenIconsRequest) (*GetTokenIconsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTokenIcons not implemented")
+}
+func (UnimplementedBusinessServer) AddToken(context.Context, *AddTokenRequest) (*AddTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddToken not implemented")
 }
 func (UnimplementedBusinessServer) mustEmbedUnimplementedBusinessServer() {}
 
@@ -120,6 +136,24 @@ func _Business_GetTokenIcons_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Business_AddToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BusinessServer).AddToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/business.api.Business/AddToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BusinessServer).AddToken(ctx, req.(*AddTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Business_ServiceDesc is the grpc.ServiceDesc for Business service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,6 +168,10 @@ var Business_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTokenIcons",
 			Handler:    _Business_GetTokenIcons_Handler,
+		},
+		{
+			MethodName: "AddToken",
+			Handler:    _Business_AddToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
